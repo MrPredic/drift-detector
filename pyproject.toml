@@ -32,6 +32,32 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+ui = [
+    "fastapi>=0.80.0",
+    "uvicorn>=0.17.4",
+]
+langchain = [
+    "langchain>=0.1.0,<0.4.0",
+    "langchain-openai>=0.0.0",
+    "langchain-google-genai>=0.1.0",
+]
+crewai = [
+    "crewai>=0.3.0",
+]
+all = [
+    "fastapi>=0.80.0",
+    "uvicorn>=0.17.4",
+    "langchain>=0.1.0,<0.4.0",
+    "langchain-openai>=0.0.0",
+    "langchain-google-genai>=0.1.0",
+    "crewai>=0.3.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/MrPredic/drift-detector"
 Documentation = "https://github.com/MrPredic/drift-detector/tree/main/docs"
