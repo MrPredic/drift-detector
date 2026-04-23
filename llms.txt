@@ -1,0 +1,81 @@
+# DriftDetector
+
+> Behavioral drift detection library for LLM agents. Detects when agents change behavior mid-session: vocabulary shrinkage, tool pattern changes, infinite loops, output stagnation.
+
+## What it solves
+
+- LangChain agent stuck in a loop → Loop Detection signal catches A→B→A→B patterns
+- CrewAI crew repeating identical outputs → Stagnation signal detects token-level repetition
+- Agent vocabulary shrinks over a session → Ghost Lexicon signal measures vocabulary loss
+- Agent switches tools unexpectedly → Behavioral Shift signal tracks tool usage changes
+- Multi-model outputs diverge → Agreement Score measures consensus across model outputs
+
+## Install
+
+```bash
+pip install drift-detector
+pip install drift-detector[langchain]   # + LangChain callback
+pip install drift-detector[crewai]      # + CrewAI event listener
+pip install drift-detector[ui]          # + FastAPI dashboard
+pip install drift-detector[all]         # everything
+```
+
+## Core API (no dependencies)
+
+```python
+from drift_detector import DriftDetectorAgent
+
+detector = DriftDetectorAgent()
+snap_before = detector.snapshot("agent_id", response_text, tool_calls)
+snap_after  = detector.snapshot("agent_id", new_response, new_tool_calls)
+report = detector.measure_drift(snap_before, snap_after)
+
+print(report.is_drifting)           # True/False
+print(report.combined_drift_score)  # 0.0–1.0
+print(report.ghost_loss)            # vocabulary shrinkage
+print(report.behavior_shift)        # tool usage change
+print(report.stagnation_score)      # output repetition
+```
+
+## LangChain (3 lines)
+
+```python
+from drift_detector.integrations.langchain import DriftDetectionCallback
+
+callback = DriftDetectionCallback()
+result = chain.invoke({"input": "..."}, callbacks=[callback])
+report = callback.get_drift_report()
+```
+
+## CrewAI (3 lines)
+
+```python
+from drift_detector.integrations.crewai import DriftDetectorEventListener
+
+listener = DriftDetectorEventListener()
+crew.add_event_listener(listener)
+result = crew.kickoff()
+report = listener.get_drift_report()
+```
+
+## 5 Signals
+
+- **Ghost Lexicon** — vocabulary shrinkage (agent loses precision terms over time)
+- **Behavioral Shift** — tool usage pattern changes between steps
+- **Loop Detection** — repetitive action sequences (A→B→A→B→A)
+- **Stagnation** — identical or near-identical outputs across steps
+- **Agreement Score** — consensus divergence across model outputs
+
+## Performance
+
+- <10ms overhead per measurement
+- No external API calls required for core detection
+- Works with any Python LLM agent, not just LangChain/CrewAI
+- SQLite persistence (optional), in-memory by default
+
+## Links
+
+- GitHub: https://github.com/MrPredic/drift-detector
+- PyPI: https://pypi.org/project/drift-detector/
+- Issues: https://github.com/MrPredic/drift-detector/issues
+- License: MIT

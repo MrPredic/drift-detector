@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriftDetector v2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.min.js" integrity="sha384-epVkZYJ/ksJth4to3tv8ExR6REARhCsNPQKPt6QHvmOM6fNWBfc1eC21ypGEQ1d0" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        :root {
+            --bg-dark: #0f1419;
+            --bg-card: #1a1f2e;
+            --bg-hover: #242d3d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border: #333;
+            --safe: #00dd00;
+            --warn: #ffaa00;
+            --danger: #ff4444;
+            --blue: #00d9ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 { font-size: 28px; font-weight: 600; }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--safe);
+        }
+
+        button {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--bg-hover);
+            border-color: var(--blue);
+        }
+
+        /* Grid Layout */
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1000px) {
+            .grid-2col { grid-template-columns: 1fr; }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        /* Chart */
+        #chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        /* Signals Grid */
+        .signals-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .signals-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .signal-card {
+            background: var(--bg-hover);
+            border: 2px solid;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .signal-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .signal-card h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .signal-value {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .signal-safe { border-color: var(--safe); }
+        .signal-safe .signal-value { color: var(--safe); }
+
+        .signal-warn { border-color: var(--warn); }
+        .signal-warn .signal-value { color: var(--warn); }
+
+        .signal-danger { border-color: var(--danger); }
+        .signal-danger .signal-value { color: var(--danger); }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .stat {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Reports */
+        .reports-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .reports-table thead {
+            background: var(--bg-hover);
+        }
+
+        .reports-table th {
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        .reports-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reports-table tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .report-num { color: var(--blue); font-weight: 600; }
+
+        .score-badge {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .score-safe { background: rgba(0, 221, 0, 0.2); color: var(--safe); }
+        .score-warn { background: rgba(255, 170, 0, 0.2); color: var(--warn); }
+        .score-danger { background: rgba(255, 68, 68, 0.2); color: var(--danger); }
+
+        .no-data {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 30px;
+        }
+
+        /* Trend Info */
+        .trend-box {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 217, 255, 0.1);
+            border-left: 3px solid var(--blue);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>DriftDetector v2</h1>
+            <div class="header-controls">
+                <div class="status">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">Connecting...</span>
+                </div>
+                <button id="refresh-btn" onclick="loadDashboard()">🔄 Refresh</button>
+                <button id="auto-btn" onclick="toggleAutoRefresh()">⏸ Auto: ON</button>
+            </div>
+        </header>
+
+        <!-- Chart -->
+        <div class="card grid-main">
+            <h2>Drift History</h2>
+            <div id="chart-container">
+                <canvas id="drift-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Stats + Signals -->
+        <div class="grid-2col">
+            <div class="card">
+                <h2>Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-label">Average</div>
+                        <div class="stat-value" id="stat-avg">0.000</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Max</div>
+                        <div class="stat-value" id="stat-max">0.000</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Min</div>
+                        <div class="stat-value" id="stat-min">0.000</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Status</h2>
+                <div style="padding: 15px 0;">
+                    <div style="margin-bottom: 10px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">REPORTS</div>
+                        <div style="font-size: 20px; font-weight: 600;" id="report-count">0</div>
+                    </div>
+                    <div id="trend-info"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signals -->
+        <div class="card grid-main">
+            <h2>Drift Signals (5 Detectors)</h2>
+            <div class="signals-grid">
+                <div class="signal-card" id="signal-0">
+                    <h3>Ghost Lexicon</h3>
+                    <div class="signal-value">-</div>
+                </div>
+                <div class="signal-card" id="signal-1">
+                    <h3>Behavior Shift</h3>
+                    <div class="signal-value">-</div>
+                </div>
+                <div class="signal-card" id="signal-2">
+                    <h3>Agreement</h3>
+                    <div class="signal-value">-</div>
+                </div>
+                <div class="signal-card" id="signal-3">
+                    <h3>Loop Detection</h3>
+                    <div class="signal-value">-</div>
+                </div>
+                <div class="signal-card" id="signal-4">
+                    <h3>Stagnation</h3>
+                    <div class="signal-value">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports -->
+        <div class="card grid-main">
+            <h2>Reports (Last 10)</h2>
+            <div id="reports-container">
+                <div class="no-data">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+        let driftChart = null;
+        let autoRefresh = true;
+        let refreshInterval = null;
+
+        // Color utility
+        function getScoreClass(score) {
+            if (score > 0.6) return 'score-danger';
+            if (score > 0.4) return 'score-warn';
+            return 'score-safe';
+        }
+
+        function getSignalClass(score) {
+            if (score > 0.6) return 'signal-danger';
+            if (score > 0.4) return 'signal-warn';
+            return 'signal-safe';
+        }
+
+        // Load data from API
+        async function loadDashboard() {
+            try {
+                const [chainRes, healthRes] = await Promise.all([
+                    fetch(`${API}/api/chain`),
+                    fetch(`${API}/api/health`)
+                ]);
+
+                if (!chainRes.ok || !healthRes.ok) throw new Error('API error');
+
+                const chain = await chainRes.json();
+                const health = await healthRes.json();
+
+                updateStatus(health);
+                updateStats(chain);
+                updateChart(chain.reports);
+                updateSignals(chain.reports);
+                updateReports(chain.reports);
+                updateTrend(chain.trend);
+            } catch (e) {
+                console.error('Load failed:', e);
+                document.getElementById('status-dot').style.background = 'var(--danger)';
+                document.getElementById('status-text').textContent = 'OFFLINE';
+            }
+        }
+
+        function updateStatus(health) {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            dot.style.background = health.status === 'healthy' ? 'var(--safe)' : 'var(--danger)';
+            text.textContent = health.status.toUpperCase();
+        }
+
+        function updateStats(chain) {
+            document.getElementById('stat-avg').textContent = chain.average_drift.toFixed(3);
+            document.getElementById('stat-max').textContent = chain.max_drift.toFixed(3);
+            document.getElementById('stat-min').textContent = chain.min_drift.toFixed(3);
+            document.getElementById('report-count').textContent = chain.total_reports;
+        }
+
+        function updateChart(reports) {
+            if (!reports.length) return;
+
+            const ctx = document.getElementById('drift-chart').getContext('2d');
+            const scores = reports.map(r => r.combined_drift_score);
+            const labels = reports.map((_, i) => i + 1);
+
+            if (!driftChart) {
+                // Initialize
+                driftChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Drift Score',
+                            data: scores,
+                            borderColor: 'var(--blue)',
+                            backgroundColor: 'rgba(0, 217, 255, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: scores.map(s => s > 0.6 ? 'var(--danger)' : s > 0.4 ? 'var(--warn)' : 'var(--safe)')
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false },
+                        plugins: { legend: { display: false } },
+                        scales: { y: { min: 0, max: 1, ticks: { callback: v => v.toFixed(1) } } }
+                    }
+                });
+            } else {
+                // Update smoothly
+                driftChart.data.labels = labels;
+                driftChart.data.datasets[0].data = scores;
+                driftChart.data.datasets[0].pointBackgroundColor = scores.map(s => s > 0.6 ? 'var(--danger)' : s > 0.4 ? 'var(--warn)' : 'var(--safe)');
+                driftChart.update('none');  // No animation on data update
+            }
+        }
+
+        function updateSignals(reports) {
+            if (!reports.length) return;
+            const last = reports[reports.length - 1];
+            const values = [last.ghost_loss, last.behavior_shift, last.agreement_score, 0, last.stagnation_score];
+
+            values.forEach((val, i) => {
+                const card = document.getElementById(`signal-${i}`);
+                card.className = `signal-card ${getSignalClass(val)}`;
+                card.querySelector('.signal-value').textContent = val.toFixed(3);
+            });
+        }
+
+        function updateReports(reports) {
+            const container = document.getElementById('reports-container');
+            const displayed = reports.slice(-10);
+
+            if (!displayed.length) {
+                container.innerHTML = '<div class="no-data">No reports yet</div>';
+                return;
+            }
+
+            let html = `
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Time</th>
+                            <th style="width: 40%;">Signals</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            displayed.forEach(r => {
+                html += `
+                    <tr>
+                        <td class="report-num">${r.step_number}</td>
+                        <td>${new Date(r.timestamp).toLocaleTimeString()}</td>
+                        <td>G:${r.ghost_loss.toFixed(2)} B:${r.behavior_shift.toFixed(2)} A:${r.agreement_score.toFixed(2)} S:${r.stagnation_score.toFixed(2)}</td>
+                        <td><span class="score-badge ${getScoreClass(r.combined_drift_score)}">${r.combined_drift_score.toFixed(3)}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function updateTrend(trend) {
+            const box = document.getElementById('trend-info');
+            if (trend && trend.status === 'ok') {
+                box.innerHTML = `
+                    <div class="trend-box">
+                        <strong>Trend:</strong> ${trend.trend.toUpperCase()} |
+                        Moving Avg: ${trend.moving_avg.toFixed(3)} |
+                        Slope: ${trend.slope.toFixed(4)}
+                    </div>
+                `;
+            }
+        }
+
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            document.getElementById('auto-btn').textContent = autoRefresh ? '⏸ Auto: ON' : '▶ Auto: OFF';
+
+            if (autoRefresh) {
+                refreshInterval = setInterval(loadDashboard, 2000);
+            } else {
+                clearInterval(refreshInterval);
+            }
+        }
+
+        // Init
+        loadDashboard();
+        refreshInterval = setInterval(loadDashboard, 2000);
+    </script>
+</body>
+</html>

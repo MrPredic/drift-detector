@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drift-detector"
+version = "2.0.0"
+description = "Behavioral drift detection for LLM agents"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [{name = "Mr. Predic"}]
+keywords = [
+    "drift-detection", "llm", "agents", "monitoring", "behavioral-analysis",
+    "langchain", "crewai", "agent-health", "model-monitoring",
+    "llm-monitoring", "agent-observability", "loop-detection", "stagnation-detection",
+    "langchain-callback", "crewai-integration", "ai-agent", "llm-agent",
+    "agent-loop", "infinite-loop-detection", "vocabulary-drift", "output-monitoring"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://github.com/MrPredic/drift-detector"
+Documentation = "https://github.com/MrPredic/drift-detector/tree/main/docs"
+Repository = "https://github.com/MrPredic/drift-detector.git"
+Issues = "https://github.com/MrPredic/drift-detector/issues"
