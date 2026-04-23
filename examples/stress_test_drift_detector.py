@@ -31,7 +31,6 @@ groq_model = ChatGroq(
 drift_detector = DriftDetectorAgent(AgentConfig(
     agent_id="stress_test",
     role="monitor",
-    memory_enabled=False
 ))
 
 results = {

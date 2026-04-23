@@ -94,6 +94,29 @@ class TestDomainTermsWeighting:
         )
 
 
+    def test_domain_term_outside_top_n_influences_ghost_loss(self):
+        """Domain term NOT in top-N of before_text must still affect ghost_loss when missing from after"""
+        # 5 frequent words + one rare domain term (appears once, outside top-5)
+        before_text = "alpha alpha alpha alpha alpha beta beta beta beta gamma delta epsilon zeta specialterm"
+        after_text  = "alpha alpha alpha alpha alpha beta beta beta beta gamma delta epsilon zeta"
+        # specialterm is absent from after
+
+        before = SessionSnapshot("t", "ts", before_text, len(before_text), [], 0, "h1")
+        after  = SessionSnapshot("t", "ts", after_text,  len(after_text),  [], 0, "h2")
+
+        # Without domain terms: specialterm not in top-5 → not evaluated → score ≈ 1.0
+        score_no_domain = ghost_lexicon_score(before, after, top_n=5, domain_terms=None)
+
+        # With domain terms: specialterm included even if outside top-5 → score < 1.0
+        score_with_domain = ghost_lexicon_score(before, after, top_n=5, domain_terms=["specialterm"])
+
+        assert score_with_domain < score_no_domain, (
+            f"Domain-aware score {score_with_domain:.3f} should be < no-domain score {score_no_domain:.3f} "
+            f"(specialterm outside top-5 was ignored by old code)"
+        )
+        print(f"✓ Domain term outside top-N: no_domain={score_no_domain:.3f}, with_domain={score_with_domain:.3f}")
+
+
 class TestDegradationMode:
     """Test behavioral_footprint_shift with is_degradation parameter"""
 

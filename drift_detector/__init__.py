@@ -1,6 +1,6 @@
 """DriftDetector - Behavioral drift detection for LLM agents"""
 
-__version__ = "2.0.0"
+__version__ = "2.0.2"
 
 from drift_detector.core.drift_detector_agent import DriftDetectorAgent, DriftReport, SessionSnapshot
 

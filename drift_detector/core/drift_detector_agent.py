@@ -44,7 +44,6 @@ class AgentConfig:
         domain_terms: Optional[List[str]] = None,
         is_degradation: bool = False,
         use_fuzzy_matching: bool = False,
-        **kwargs
     ):
         # Validate thresholds
         if not 0 <= drift_threshold <= 1:
@@ -208,7 +207,7 @@ def ghost_lexicon_score(before: SessionSnapshot, after: SessionSnapshot, top_n: 
         weighted_survived = 0.0
         total_weight = 0.0
 
-        for term in top_terms:
+        for term in top_terms | domain_set:
             weight = 2.0 if term in domain_set else 1.0
             total_weight += weight
 
@@ -479,7 +478,7 @@ def detect_loops_ensemble(actions: List[str],
     # Check if action diversity violates task-specific threshold
     recent_window = actions[-20:] if len(actions) > 20 else actions
     unique_actions = len(set(recent_window))
-    is_looping_by_task = unique_actions < min_unique_actions and unique_actions > 0
+    is_looping_by_task = unique_actions < min_unique_actions and unique_actions > 0 and len(recent_window) >= min_unique_actions * 2
 
     # Diversity is most reliable signal
     # If < threshold, likely looping
@@ -612,9 +611,11 @@ class DriftDetectorAgent(BaseAgent):
         similarity = len(intersection) / len(union)
 
         # Optional: adaptive window detection (check if pattern repeats)
-        if adaptive_window and len(self.drift_history) >= 3:
+        with self._lock:
+            history_snapshot = list(self.drift_history)
+        if adaptive_window and len(history_snapshot) >= 3:
             # Look back at last few reports for repeating pattern
-            recent_reports = self.drift_history[-5:]
+            recent_reports = history_snapshot[-5:]
             stagnation_scores = [r.stagnation_score for r in recent_reports]
 
             # If last N reports all high stagnation, confidence increases
@@ -752,19 +753,24 @@ class DriftDetectorAgent(BaseAgent):
 
     def to_dict(self) -> Dict:
         """Serialize for logging/export"""
+        with self._lock:
+            history = list(self.drift_history)
         return {
             "agent_id": self.config.agent_id,
-            "total_drifts_detected": sum(1 for r in self.drift_history if r.is_drifting),
-            "history_length": len(self.drift_history),
+            "total_drifts_detected": sum(1 for r in history if r.is_drifting),
+            "history_length": len(history),
             "latest_report": {
-                "combined_drift": self.drift_history[-1].combined_drift_score if self.drift_history else 0.0,
-                "is_drifting": self.drift_history[-1].is_drifting if self.drift_history else False,
-            } if self.drift_history else None
+                "combined_drift": history[-1].combined_drift_score if history else 0.0,
+                "is_drifting": history[-1].is_drifting if history else False,
+            } if history else None
         }
 
     def get_stats(self) -> Dict:
         """Get signal distribution and detection statistics"""
-        if not self.drift_history:
+        with self._lock:
+            history = list(self.drift_history)
+
+        if not history:
             return {
                 "total_reports": 0,
                 "drifts_detected": 0,
@@ -794,7 +800,7 @@ class DriftDetectorAgent(BaseAgent):
         severity_count = {"critical": 0, "warning": 0, "info": 0}
         avg_score = 0.0
 
-        for report in self.drift_history:
+        for report in history:
             avg_score += report.combined_drift_score
 
             # Count which signals triggered
@@ -825,11 +831,11 @@ class DriftDetectorAgent(BaseAgent):
                 lc = report.loop_report.combined_confidence
                 severity_count["critical" if lc > critical_threshold else "warning"] += 1
 
-        avg_score = avg_score / len(self.drift_history) if self.drift_history else 0.0
+        avg_score = avg_score / len(history) if history else 0.0
 
         return {
-            "total_reports": len(self.drift_history),
-            "drifts_detected": sum(1 for r in self.drift_history if r.is_drifting),
+            "total_reports": len(history),
+            "drifts_detected": sum(1 for r in history if r.is_drifting),
             "avg_drift_score": round(avg_score, 3),
             "signal_distribution": signal_count,
             "severity_distribution": severity_count,
@@ -853,14 +859,17 @@ class DriftDetectorAgent(BaseAgent):
                 - reports_count: Total reports in history
                 - last_score: Most recent drift score
         """
-        if len(self.drift_history) < window_size:
+        with self._lock:
+            history = list(self.drift_history)
+
+        if len(history) < window_size:
             return {
                 "status": "insufficient_data",
-                "count": len(self.drift_history),
+                "count": len(history),
                 "required": window_size
             }
 
-        reports = self.drift_history[-window_size:]
+        reports = history[-window_size:]
         scores = [r.combined_drift_score for r in reports]
 
         # Moving average
@@ -1112,7 +1121,7 @@ if __name__ == "__main__":
     run_tests()
 
     # Demo: instantiate and use
-    config = AgentConfig(agent_id="drift_demo", role="monitor", memory_enabled=False)
+    config = AgentConfig(agent_id="drift_demo", role="monitor")
     detector = DriftDetectorAgent(config)
 
     # Simulate session boundary drift

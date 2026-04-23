@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drift Detector Agent</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
@@ -1271,7 +1271,6 @@ tbody tr:last-child td { border-bottom: none; }
      ORIGINAL JAVASCRIPT — UNMODIFIED
 ════════════════════════════════════════════════════════ -->
 <script>
-        const API = window.location.origin;
         let driftChart = null;
         let radarChart = null;
         let autoRefresh = true;
@@ -1371,8 +1370,8 @@ tbody tr:last-child td { border-bottom: none; }
         async function loadDashboard() {
             try {
                 const [chainRes, healthRes] = await Promise.all([
-                    fetch(`${API}/api/chain`),
-                    fetch(`${API}/api/health`)
+                    fetch(`/api/chain`),
+                    fetch(`/api/health`)
                 ]);
 
                 if (!chainRes.ok || !healthRes.ok) throw new Error('API error');

@@ -185,5 +185,38 @@ class TestTaskTypeIntegration:
             print(f"✓ {task_type} handles empty actions")
 
 
+class TestLoopFPShortHistory:
+    """Regression tests: loop detection must not false-positive on short histories"""
+
+    def test_single_action_coding_no_fp(self):
+        """Single-action history with task_type='coding' must NOT trigger is_looping"""
+        report = detect_loops_ensemble(["write_code"], task_type="coding")
+        assert not report.is_looping, (
+            f"Single-action history should not be flagged as looping, "
+            f"got is_looping=True (combined_confidence={report.combined_confidence:.2f})"
+        )
+        print(f"✓ Single-action no FP: is_looping={report.is_looping}, confidence={report.combined_confidence:.2f}")
+
+    def test_short_history_below_min_window_no_fp(self):
+        """History shorter than min_unique_actions*2 must NOT trigger is_looping"""
+        # coding: min_unique=4, window threshold=8 — 3-element history stays below
+        report = detect_loops_ensemble(["write_code", "run_tests", "write_code"], task_type="coding")
+        assert not report.is_looping, (
+            f"3-action history below window threshold should not be looping, "
+            f"got is_looping={report.is_looping}"
+        )
+        print(f"✓ Short history no FP: is_looping={report.is_looping}")
+
+    def test_long_repetitive_history_still_detected(self):
+        """Long truly-looping history must still be caught after the fix"""
+        actions = ["write_code"] * 20
+        report = detect_loops_ensemble(actions, task_type="coding")
+        assert report.is_looping, (
+            f"20x identical action should still be detected as looping, "
+            f"got is_looping={report.is_looping}"
+        )
+        print(f"✓ Long loop still detected: is_looping={report.is_looping}, confidence={report.combined_confidence:.2f}")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

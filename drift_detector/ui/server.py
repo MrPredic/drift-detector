@@ -7,15 +7,18 @@ Endpoints: GET /api/chain, POST /api/drift, GET /api/health, GET /api/config
 """
 
 import os
+import logging
 from typing import Optional, List, Dict
 from datetime import datetime
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from drift_detector.core import DriftDetectorAgent
 from drift_detector.core.drift_detector_agent import AgentConfig, SessionSnapshot
@@ -46,24 +49,24 @@ def _init_detector() -> DriftDetectorAgent:
             signal_threshold=float(os.getenv("SIGNAL_THRESHOLD", "0.7")),
         )
         _detector_instance = DriftDetectorAgent(config)
-        print(f"✓ DriftDetector initialized: {config.agent_id}")
+        logger.info("DriftDetector initialized: %s", config.agent_id)
 
         # Optional session storage
         if _enable_persistence and SESSION_STORAGE_AVAILABLE:
             db_path = os.getenv("SESSION_DB_PATH", "drift_sessions.db")
             _session_storage = SessionStorage(db_path)
             _current_session_id = _session_storage.create_session()
-            print(f"✓ Session storage enabled: {db_path}")
-            print(f"  Current session: {_current_session_id}")
+            logger.info("Session storage enabled: %s", db_path)
+            logger.info("Current session: %s", _current_session_id)
         else:
-            print("ℹ Session storage disabled (in-memory only)")
+            logger.info("Session storage disabled (in-memory only)")
 
         return _detector_instance
     except (ValueError, TypeError) as e:
-        print(f"✗ Failed to initialize DriftDetector: {e}")
+        logger.warning("Failed to initialize DriftDetector: %s", e)
         raise RuntimeError(f"DriftDetector config error: {e}") from e
     except Exception as e:
-        print(f"✗ Unexpected error in DriftDetector init: {e}")
+        logger.warning("Unexpected error in DriftDetector init: %s", e)
         raise RuntimeError(f"DriftDetector initialization failed: {e}") from e
 
 def get_detector() -> DriftDetectorAgent:
@@ -104,6 +107,13 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+@app.middleware("http")
+async def limit_body(request: Request, call_next):
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > 256_000:
+        return JSONResponse({"detail": "payload too large"}, status_code=413)
+    return await call_next(request)
 
 # ============================================================================
 # Request/Response Models
@@ -211,8 +221,12 @@ async def measure_drift(request: SnapshotRequest, detector: DriftDetectorAgent =
         raise HTTPException(status_code=500, detail=f"Drift measurement failed: {str(e)}")
 
 @app.get("/api/chain", response_model=ChainData)
-async def get_chain_data(detector: DriftDetectorAgent = Depends(get_detector)):
-    """Get full drift history with trends"""
+async def get_chain_data(
+    limit: int = 500,
+    offset: int = 0,
+    detector: DriftDetectorAgent = Depends(get_detector)
+):
+    """Get drift history with trends (paginated via limit/offset)"""
     try:
 
         if len(detector.drift_history) == 0:
@@ -225,11 +239,12 @@ async def get_chain_data(detector: DriftDetectorAgent = Depends(get_detector)):
                 min_drift=0.0
             )
 
-        # Convert reports to dict format
+        # Convert reports to dict format (paginated)
+        history_page = detector.drift_history[offset: offset + limit]
         reports = []
         scores = []
 
-        for i, report in enumerate(detector.drift_history, 1):
+        for i, report in enumerate(history_page, offset + 1):
             score = report.combined_drift_score
             scores.append(score)
 

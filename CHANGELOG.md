@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.2] - 2026-04-23
+
+### 🐛 Bug Fixes
+- **ghost_lexicon_score:** Domain terms outside top-N are now evaluated — iteration changed from `top_terms` to `top_terms | domain_set` so critical vocabulary outside the frequency cutoff still contributes to ghost loss
+- **detect_loops_ensemble:** Loop FP on short histories fixed — `is_looping_by_task` now requires `len(recent_window) >= min_unique_actions * 2`; single-action or very short histories no longer trigger false positives
+- **AgentConfig:** `**kwargs` removed from `__init__` — unknown keyword arguments now raise `TypeError` immediately instead of silently swallowing typos; demo `memory_enabled=False` removed from `__main__` block
+- **frontend_v4_sessions.html:** Chart.js bumped from 4.4.0 → 4.5.1 with full SRI (`sha384-...`) + `crossorigin="anonymous"`; all `${API}/api/...` fetch calls replaced with relative `/api/...` paths
+- **server.py `/api/chain`:** Pagination via `limit` (default 500) and `offset` (default 0) query params to prevent unbounded JSON responses
+- **server.py body limit:** HTTP middleware rejects requests with `Content-Length > 256 000` bytes with HTTP 413
+- **server.py logging:** All `print(...)` in `_init_detector` replaced with `logger.info/warning`; `import logging` + module-level logger added
+- **DriftDetectorAgent threading:** `detect_stagnation`, `get_stats`, `get_drift_trend`, `to_dict` now snapshot `drift_history` under `self._lock` before reading to prevent data races on concurrent FastAPI requests
+
 ## [2.0.1] - 2026-04-23
 
 ### 🐛 Bug Fixes
