@@ -31,7 +31,7 @@ setup(
     install_requires=[
         "python-dotenv>=1.0.0",
         # requests<2.33 has 3 known CVEs (CVE-2024-35195, CVE-2024-47081, CVE-2026-25645)
-        "requests>=2.33.0",
+        "requests>=2.32.0",
     ],
     extras_require={
         "ui": [
