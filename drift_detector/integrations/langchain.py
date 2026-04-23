@@ -64,12 +64,12 @@ class DriftDetectionCallback(BaseCallbackHandler):
 
         Raises:
             ImportError: If langchain-core is not installed.
-                         Install with: pip install drift-detector[langchain]
+                         Install with: pip install drift-detector-agent[langchain]
         """
         if not _LANGCHAIN_AVAILABLE:
             raise ImportError(
                 "LangChain is required for DriftDetectionCallback. "
-                "Install with: pip install drift-detector[langchain]"
+                "Install with: pip install drift-detector-agent[langchain]"
             )
         super().__init__()
 

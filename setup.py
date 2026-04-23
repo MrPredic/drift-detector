@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="drift-detector",
+    name="drift-detector-agent",
     version="2.0.0",
     author="Mr. Predic",
     description="Behavioral drift detection for LLM agents - detect when your agent starts acting unpredictably",

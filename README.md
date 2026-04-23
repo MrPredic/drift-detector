@@ -23,7 +23,7 @@
 ## Install
 
 ```bash
-pip install drift-detector
+pip install drift-detector-agent
 ```
 
 ---
@@ -56,9 +56,9 @@ Wizard guides you through:
 Or **skip wizard:**
 
 ```bash
-pip install drift-detector[ui]          # Core + Web Dashboard
-pip install drift-detector[langchain]   # Core + LangChain
-pip install drift-detector[all]         # Everything
+pip install drift-detector-agent[ui]          # Core + Web Dashboard
+pip install drift-detector-agent[langchain]   # Core + LangChain
+pip install drift-detector-agent[all]         # Everything
 ```
 
 ---
@@ -157,7 +157,7 @@ Works with **5 LLM providers** (all tested & verified Apr 2026):
 ### 1. Install Package
 
 ```bash
-pip install drift-detector
+pip install drift-detector-agent
 ```
 
 Verify installation:
@@ -314,7 +314,7 @@ cp .env.example .env
 
 ### "Model not available"
 - Use the optional `LLMRouter` (auto-selects the fastest provider that has an API key set)
-- Requires the `langchain` extra: `pip install drift-detector[langchain]`
+- Requires the `langchain` extra: `pip install drift-detector-agent[langchain]`
 
 ### "Drift not detected"
 - Lower `drift_threshold` in config (default: 0.4)
@@ -374,10 +374,10 @@ We welcome contributions! Please:
 ### "ModuleNotFoundError: No module named 'drift_detector'"
 ```bash
 # Install the package
-pip install drift-detector
+pip install drift-detector-agent
 
 # Or verify installation
-pip list | grep drift-detector
+pip list | grep drift-detector-agent
 ```
 
 ### "ImportError: No module named 'langchain'"
@@ -416,7 +416,7 @@ git status .env
 **Ready to detect agent drift?**
 
 ```bash
-pip install drift-detector
+pip install drift-detector-agent
 ```
 
 [Quick Start Guide](README.md#setup) • [View Examples](examples/) • [Read Docs](docs/) • [GitHub](https://github.com/MrPredic/drift-detector)

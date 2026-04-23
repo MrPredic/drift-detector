@@ -31,35 +31,35 @@ PRESETS = {
     "1": {
         "name": "Core Only",
         "description": "Local model inference (OpenClaw, Ollama) - no API keys needed",
-        "install": "pip install drift-detector",
+        "install": "pip install drift-detector-agent",
         "features": ["Core Drift Detection"],
         "apis": []
     },
     "2": {
         "name": "Core + UI",
         "description": "Add monitoring dashboard - real-time drift tracking & trends",
-        "install": "pip install drift-detector[ui]",
+        "install": "pip install drift-detector-agent[ui]",
         "features": ["Core Drift Detection", "Web Dashboard"],
         "apis": ["OPENCLAW_HOST", "OLLAMA_HOST"]
     },
     "3": {
         "name": "Core + LangChain",
         "description": "Integrate with LangChain agents - auto drift detection",
-        "install": "pip install drift-detector[langchain]",
+        "install": "pip install drift-detector-agent[langchain]",
         "features": ["Core Drift Detection", "LangChain Integration"],
         "apis": ["GROQ_API_KEY", "CEREBRAS_API_KEY", "GOOGLE_API_KEY", "OPENROUTER_API_KEY"]
     },
     "4": {
         "name": "Core + CrewAI",
         "description": "Multi-agent teams - agent coordination with drift tracking",
-        "install": "pip install drift-detector[crewai]",
+        "install": "pip install drift-detector-agent[crewai]",
         "features": ["Core Drift Detection", "CrewAI Integration"],
         "apis": ["GROQ_API_KEY", "CEREBRAS_API_KEY", "GOOGLE_API_KEY", "OPENROUTER_API_KEY"]
     },
     "5": {
         "name": "Full Stack",
         "description": "Everything - monitoring dashboard + all integrations",
-        "install": "pip install drift-detector[all]",
+        "install": "pip install drift-detector-agent[all]",
         "features": ["Core Drift Detection", "Web Dashboard", "LangChain", "CrewAI"],
         "apis": ["OPENCLAW_HOST", "OLLAMA_HOST", "GROQ_API_KEY", "CEREBRAS_API_KEY", "GOOGLE_API_KEY", "OPENROUTER_API_KEY"]
     },
@@ -144,9 +144,9 @@ def generate_install_command(choice, custom_features=None):
         extras.append("crewai")
 
     if extras:
-        return f"pip install drift-detector[{','.join(extras)}]"
+        return f"pip install drift-detector-agent[{','.join(extras)}]"
     else:
-        return "pip install drift-detector"
+        return "pip install drift-detector-agent"
 
 def get_required_apis(choice, custom_features=None):
     """Get list of APIs needed for this setup"""

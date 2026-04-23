@@ -13,11 +13,11 @@
 ## Install
 
 ```bash
-pip install drift-detector
-pip install drift-detector[langchain]   # + LangChain callback
-pip install drift-detector[crewai]      # + CrewAI event listener
-pip install drift-detector[ui]          # + FastAPI dashboard
-pip install drift-detector[all]         # everything
+pip install drift-detector-agent
+pip install drift-detector-agent[langchain]   # + LangChain callback
+pip install drift-detector-agent[crewai]      # + CrewAI event listener
+pip install drift-detector-agent[ui]          # + FastAPI dashboard
+pip install drift-detector-agent[all]         # everything
 ```
 
 ## Core API (no dependencies)

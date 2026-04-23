@@ -50,7 +50,7 @@
 
 ### New Install
 ```bash
-pip install drift-detector
+pip install drift-detector-agent
 python setup_wizard.py
 ```
 

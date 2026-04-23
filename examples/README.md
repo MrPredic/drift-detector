@@ -30,7 +30,7 @@ and do not hit any external API.
 ### 2. LangChain integration
 
 ```bash
-pip install drift-detector[langchain]
+pip install drift-detector-agent[langchain]
 python3 examples/test_langchain_chain_with_drift.py
 ```
 
@@ -42,7 +42,7 @@ Shows:
 ### 3. LangChain with real LLM calls
 
 ```bash
-pip install drift-detector[langchain]
+pip install drift-detector-agent[langchain]
 export GROQ_API_KEY="gsk_..."   # Groq keys start with gsk_
 python3 examples/test_langchain_chain_real_groq.py
 ```
@@ -53,7 +53,7 @@ real Groq calls and reports drift between steps.
 ### 4. CrewAI integration
 
 ```bash
-pip install drift-detector[crewai]
+pip install drift-detector-agent[crewai]
 python3 examples/test_crewai_with_drift.py
 ```
 
@@ -119,7 +119,7 @@ The core drift-detection engine works offline and needs no keys at all.
 After running any example you can inspect results in the dashboard:
 
 ```bash
-pip install drift-detector[ui]
+pip install drift-detector-agent[ui]
 python3 -m uvicorn drift_detector.ui.server:app --host 127.0.0.1 --port 8000
 # then open http://127.0.0.1:8000
 ```

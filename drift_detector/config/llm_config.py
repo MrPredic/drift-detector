@@ -35,7 +35,7 @@ class LLMRouter:
         except ImportError as exc:  # pragma: no cover - optional dep
             raise ImportError(
                 "LLMRouter requires LangChain. "
-                "Install with: pip install drift-detector[langchain]"
+                "Install with: pip install drift-detector-agent[langchain]"
             ) from exc
 
         self.providers = self._init_providers()

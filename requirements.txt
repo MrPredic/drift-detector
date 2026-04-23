@@ -4,22 +4,22 @@ python-dotenv>=1.0.0
 requests>=2.32.0
 
 # Optional: LangChain Integration
-# Install with: pip install drift-detector[langchain]
+# Install with: pip install drift-detector-agent[langchain]
 # langchain==0.2.0
 # langchain-openai==0.1.0
 # langchain-core==0.2.0
 # langchain-google-genai==0.1.0
 
 # Optional: CrewAI Integration
-# Install with: pip install drift-detector[crewai]
+# Install with: pip install drift-detector-agent[crewai]
 # crewai==0.5.1
 
 # Optional: Dashboard (FastAPI)
-# Install with: pip install drift-detector[ui]
+# Install with: pip install drift-detector-agent[ui]
 # fastapi==0.115.0
 # uvicorn==0.30.0
 
 # Development Dependencies
-# Install with: pip install drift-detector[dev]
+# Install with: pip install drift-detector-agent[dev]
 # pytest==7.0.0
 # pytest-cov==4.0.0
