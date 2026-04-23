@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.1] - 2026-04-23
+
+### 🐛 Bug Fixes
+- **LangChain callback:** `on_chain_end` now coerces output across all common key names (`output`, `text`, `result`, `answer`, `response`) — previously no-oped silently on most chains
+- **combined_drift_score:** Loop detection signal (5th) now included in mean — was missing, contradicting README
+- **DB timestamp collision:** Removed `UNIQUE` constraint on timestamp column — silent data loss under concurrent load is fixed
+- **Threading:** `drift_history.append` now protected by `threading.Lock` — concurrent FastAPI requests no longer race on list mutation
+- **CORS:** `allow_credentials=True` + `allow_origins=["*"]` was an invalid combo; credentials now disabled when origins is wildcard
+- **Severity thresholds:** `critical`/`warning` levels now scale with `signal_threshold` config instead of hardcoded `0.7`
+- **Vocabulary regex:** `min_len` default lowered from 5 → 3, capturing short but critical terms like `AI`, `LLM`, `API`, `SQL`
+- **Loop map:** `task_type="medical"` now has an explicit entry (`min_unique_actions=4`) instead of silently falling back to default
+- **Memory:** `_load_history` now caps at last 10,000 rows (`ORDER BY id DESC LIMIT 10000`) — prevents unbounded memory growth
+- **Logging:** Core DB errors now use `logger.warning()` instead of `print()` for production observability
+
 ## [2.0.0] - 2026-04-20
 
 ### ✨ New Features

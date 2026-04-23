@@ -85,7 +85,17 @@ class DriftDetectionCallback(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict, **kwargs):
         """Called when chain execution completes"""
         try:
-            output_text = outputs.get('output', '')
+            # Coerce output across common LangChain output key names
+            output_text = (
+                outputs.get('output')
+                or outputs.get('text')
+                or outputs.get('result')
+                or outputs.get('answer')
+                or outputs.get('response')
+                or (next(iter(outputs.values()), '') if outputs else '')
+            )
+            if not isinstance(output_text, str):
+                output_text = str(output_text) if output_text is not None else ''
             tool_calls = outputs.get('tool_calls', [])
 
             # Create snapshot

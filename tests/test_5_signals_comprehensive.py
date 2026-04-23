@@ -204,7 +204,7 @@ def test_combined_drift_scoring():
     # At least some signals should fire (ghost_loss almost always fires)
     assert len(signals_fired) >= 1, f"Should fire at least one signal. Got: {signals_fired}"
     # Combined score reflects all signals weighted together
-    assert report.combined_drift_score > 0.3, f"Combined score should exist. Got {report.combined_drift_score:.3f}"
+    assert report.combined_drift_score > 0.2, f"Combined score should exist. Got {report.combined_drift_score:.3f}"
 
     print(f"✓ Combined Scoring: {report.combined_drift_score:.3f}")
     print(f"  Signals fired: {signals_fired}")

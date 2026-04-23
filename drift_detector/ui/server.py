@@ -95,10 +95,12 @@ app = FastAPI(
 
 # Enable CORS - Restrict to allowed origins in production
 cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+# allow_credentials=True + allow_origins=["*"] is an invalid combo (browser rejects it)
+_allow_credentials = cors_origins != ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_credentials=_allow_credentials,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )

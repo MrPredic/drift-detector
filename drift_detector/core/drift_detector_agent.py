@@ -16,12 +16,16 @@ import json
 import hashlib
 import sqlite3
 import os
+import logging
+import threading
 from collections import Counter
 from math import log
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Standalone base — no external infrastructure dependencies required
 BaseAgent = object
@@ -94,7 +98,7 @@ class SessionSnapshot:
             self.vocabulary = self._extract_vocabulary(self.response_text)
 
     @staticmethod
-    def _extract_vocabulary(text: str, min_len: int = 5) -> Counter:
+    def _extract_vocabulary(text: str, min_len: int = 3) -> Counter:
         """Extract word frequency from text"""
         if not text or not isinstance(text, str):
             return Counter()
@@ -138,7 +142,7 @@ class DriftAlert:
 
         for signal_name, score in signals:
             if score > signal_threshold:
-                level = "critical" if score > 0.7 else "warning"
+                level = "critical" if score > signal_threshold * 1.3 else "warning"
                 message = f"{signal_name} exceeded threshold: {score:.3f} > {signal_threshold:.3f}"
                 return DriftAlert(
                     level=level,
@@ -468,6 +472,7 @@ def detect_loops_ensemble(actions: List[str],
         "research": 2,
         "trading": 3,
         "general": 3,
+        "medical": 4,  # medical requires high action diversity
     }
     min_unique_actions = min_unique_actions_map.get(task_type, 3)
 
@@ -553,7 +558,8 @@ class DriftDetectorAgent(BaseAgent):
         else:
             self.agent_id = "drift_detector"
 
-        # Initialize snapshots and history
+        # Initialize snapshots and history (lock protects concurrent appends)
+        self._lock = threading.Lock()
         self.snapshots: Dict[str, SessionSnapshot] = {}
         self.drift_history: List[DriftReport] = []
 
@@ -714,8 +720,9 @@ class DriftDetectorAgent(BaseAgent):
         # Signal 5: Stagnation Detection
         stagnation_score = self.detect_stagnation(before, after, adaptive_window=True)
 
-        # Combined drift score (5 signals)
-        signals = [ghost_loss, behavior_shift, 1.0 - agreement, stagnation_score]  # Invert agreement (lower=more drift)
+        # Combined drift score (5 signals — includes loop confidence)
+        loop_score = loop_report.combined_confidence if loop_report and loop_report.is_looping else 0.0
+        signals = [ghost_loss, behavior_shift, 1.0 - agreement, stagnation_score, loop_score]
         combined_drift_score = sum(signals) / len(signals)
 
         # Use configurable thresholds
@@ -738,7 +745,8 @@ class DriftDetectorAgent(BaseAgent):
             is_drifting=is_drifting
         )
 
-        self.drift_history.append(report)
+        with self._lock:
+            self.drift_history.append(report)
         self._save_report(report)
         return report
 
@@ -790,29 +798,32 @@ class DriftDetectorAgent(BaseAgent):
             avg_score += report.combined_drift_score
 
             # Count which signals triggered
+            critical_threshold = self.config.signal_threshold * 1.3
+
             if report.ghost_loss > self.config.signal_threshold:
                 signal_count["ghost_loss"] += 1
-                severity = "critical" if report.ghost_loss > 0.7 else "warning"
+                severity = "critical" if report.ghost_loss > critical_threshold else "warning"
                 severity_count[severity] += 1
 
             if report.behavior_shift > self.config.signal_threshold:
                 signal_count["behavior_shift"] += 1
-                severity = "critical" if report.behavior_shift > 0.7 else "warning"
+                severity = "critical" if report.behavior_shift > critical_threshold else "warning"
                 severity_count[severity] += 1
 
             if (1.0 - report.agreement_score) > self.config.signal_threshold:
                 signal_count["agreement"] += 1
-                severity = "critical" if (1.0 - report.agreement_score) > 0.7 else "warning"
+                severity = "critical" if (1.0 - report.agreement_score) > critical_threshold else "warning"
                 severity_count[severity] += 1
 
             if report.stagnation_score > self.config.signal_threshold:
                 signal_count["stagnation"] += 1
-                severity = "critical" if report.stagnation_score > 0.7 else "warning"
+                severity = "critical" if report.stagnation_score > critical_threshold else "warning"
                 severity_count[severity] += 1
 
             if report.loop_report and report.loop_report.is_looping:
                 signal_count["loop_detection"] += 1
-                severity_count["warning"] += 1
+                lc = report.loop_report.combined_confidence
+                severity_count["critical" if lc > critical_threshold else "warning"] += 1
 
         avg_score = avg_score / len(self.drift_history) if self.drift_history else 0.0
 
@@ -1012,7 +1023,7 @@ def _init_db(self):
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS drift_reports (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT UNIQUE,
+                timestamp TEXT,
                 agent_id TEXT,
                 combined_drift_score REAL,
                 ghost_loss REAL,
@@ -1026,7 +1037,7 @@ def _init_db(self):
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"⚠️ DB init failed: {e}")
+        logger.warning("DB init failed: %s", e)
 
 
 def _save_report(self, report: DriftReport):
@@ -1052,10 +1063,9 @@ def _save_report(self, report: DriftReport):
         ))
         conn.commit()
         conn.close()
-    except sqlite3.IntegrityError:
-        pass  # Duplicate timestamp, skip
     except Exception as e:
-        print(f"⚠️ Save failed: {e}")
+        import logging as _logging
+        _logging.getLogger(__name__).warning("DB save failed: %s", e)
 
 
 def _load_history(self):
@@ -1065,8 +1075,10 @@ def _load_history(self):
             return
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM drift_reports ORDER BY timestamp')
+        # Cap at last 10_000 rows to prevent unbounded memory growth
+        cursor.execute('SELECT * FROM drift_reports ORDER BY id DESC LIMIT 10000')
         rows = cursor.fetchall()
+        rows.reverse()  # restore chronological order
         for row in rows:
             _, timestamp, agent_id, combined, ghost, shift, agreement, stagnation, is_drifting, loop_detected = row
             report = DriftReport(
@@ -1082,7 +1094,7 @@ def _load_history(self):
             self.drift_history.append(report)
         conn.close()
     except Exception as e:
-        print(f"⚠️ Load failed: {e}")
+        logger.warning("DB load failed: %s", e)
 
 
 # Bind persistence methods to DriftDetectorAgent
