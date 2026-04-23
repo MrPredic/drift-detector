@@ -9,7 +9,7 @@ description = "Behavioral drift detection for LLM agents"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
-authors = [{name = "Mr. Predic"}]
+authors = [{name = "MrPredic"}]
 dependencies = [
     "python-dotenv>=1.0.0",
     "requests>=2.32.0",

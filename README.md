@@ -11,11 +11,10 @@
 
 5 detection signals · <10ms overhead · 3-line integration · MIT License
 
-![Status](https://img.shields.io/badge/status-production--ready-brightgreen)
-![Tests](https://img.shields.io/badge/tests-159%2F159%20pass-brightgreen)
+![CI](https://github.com/MrPredic/drift-detector/actions/workflows/ci.yml/badge.svg)
+![PyPI](https://img.shields.io/pypi/v/drift-detector-agent)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![Security](https://img.shields.io/badge/security-audited-blue)
 
 ---
